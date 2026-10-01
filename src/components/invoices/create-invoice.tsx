@@ -139,20 +139,15 @@ export function CreateInvoice({ onCreated }: Props) {
       });
       const json = await res.json();
       if (json.ok) {
-        toast.success(`Factura ${json.invoice.number} creada correctamente`);
+        toast.success(`Factura ${json.invoice.number} creada correctamente`, { duration: 5000 });
         // Reset
         setClientName(""); setClientCuit(""); setClientAddress(""); setClientEmail("");
         setDescription(""); setDueAt("");
         setItems([{ description: "", quantity: 1, unitPrice: 0 }]);
         onCreated?.();
       } else {
-        // Si el error es de tablas faltantes, mensaje específico y útil
-        if (json.detail && String(json.detail).includes("does not exist")) {
-          toast.error("Faltan crear las tablas en la base de datos. Corré 'npx prisma db push' localmente con tu DATABASE_URL.", { duration: 8000 });
-        } else {
-          toast.error(json.error || "Error al crear factura", { duration: 6000 });
-          if (json.detail) console.error("Detalle:", json.detail);
-        }
+        console.error("API error:", json);
+        toast.error(json.error || "Error al crear factura", { duration: 6000 });
       }
     } catch (err) {
       console.error("Network error:", err);

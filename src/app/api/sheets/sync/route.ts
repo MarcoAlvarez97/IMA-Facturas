@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ensureSchema } from "@/lib/ensure-schema";
 
 // Sincroniza una factura a Google Sheets vía Web App de Apps Script.
 // IMPORTANTE: el Web App debe estar deployado con "Quién puede acceder: Cualquiera"
@@ -45,6 +46,7 @@ function rowFromInvoice(inv: InvoiceWithItems): Record<string, string | number> 
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureSchema();
     const body = await req.json();
     const invoiceId: string | undefined = body?.invoiceId;
     if (!invoiceId) {

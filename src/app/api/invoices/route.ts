@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ensureSchema } from "@/lib/ensure-schema";
 
 export interface InvoiceItemInput {
   description: string;
@@ -8,6 +9,7 @@ export interface InvoiceItemInput {
 }
 
 export async function GET() {
+  await ensureSchema();
   const invoices = await db.invoice.findMany({
     include: { items: true },
     orderBy: { issuedAt: "desc" },
@@ -16,6 +18,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await ensureSchema();
   try {
     const body = await req.json();
 

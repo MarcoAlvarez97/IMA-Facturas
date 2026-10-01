@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ensureSchema } from "@/lib/ensure-schema";
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  await ensureSchema();
   const { id } = await ctx.params;
   const body = await req.json();
   const newStatus = body.status; // "pendiente" | "pagada" | "anulada" | "vencida"

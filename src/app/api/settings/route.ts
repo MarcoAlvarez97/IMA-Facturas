@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ensureSchema } from "@/lib/ensure-schema";
 
 export async function GET() {
+  await ensureSchema();
   const settings = await db.settings.upsert({
     where: { id: "singleton" },
     update: {},
@@ -11,6 +13,7 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  await ensureSchema();
   const body = await req.json();
   const allowed: Record<string, unknown> = {};
   const fields = [
