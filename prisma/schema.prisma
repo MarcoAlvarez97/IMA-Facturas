@@ -1,0 +1,86 @@
+// Prisma schema — IMA Facturas
+// Para deploy en Vercel usamos PostgreSQL (Neon, Vercel Postgres, Supabase, etc.)
+// Cambiá el provider a "sqlite" solo si querés correr en local sin server.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // PARA DEPLOY EN VERCEL: dejá postgresql
+  // PARA USO LOCAL sin server: cambiá a "sqlite" y DATABASE_URL="file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  number        String   @unique
+  issuerName    String
+  issuerCuit    String
+  issuerAddress String?
+  clientName    String
+  clientCuit    String?
+  clientAddress String?
+  clientEmail   String?
+  description   String?
+  issuedAt      DateTime @default(now())
+  dueAt         DateTime?
+  usdRate       Float
+  usdRateDate   DateTime
+  usdSubtotal   Float
+  usdTaxRate    Float    @default(0)
+  usdTaxAmount  Float    @default(0)
+  usdTotal      Float
+  arsSubtotal   Float
+  arsTaxAmount  Float    @default(0)
+  arsTotal      Float
+  status        String   @default("pendiente")
+  paidAt        DateTime?
+  items         InvoiceItem[]
+  sheetsSynced  Boolean  @default(false)
+  sheetsRowId   Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([issuedAt])
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Float
+  usdAmount   Float
+  arsAmount   Float
+  createdAt   DateTime @default(now())
+
+  @@index([invoiceId])
+}
+
+model Settings {
+  id            String   @id @default("singleton")
+  companyName   String?
+  companyCuit   String?
+  companyAddress String?
+  companyPhone  String?
+  companyEmail  String?
+  defaultTaxRate Float   @default(21)
+  sheetsWebAppUrl String?
+  invoicePrefix String?
+  nextInvoiceNumber Int @default(1)
+  updatedAt     DateTime @updatedAt
+}
+
+model DollarRate {
+  id          String   @id @default(cuid())
+  source      String   @default("BNA")
+  buy         Float
+  sell        Float
+  fetchedAt   DateTime @default(now())
+
+  @@index([source, fetchedAt])
+}
