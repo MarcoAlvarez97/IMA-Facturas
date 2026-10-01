@@ -26,12 +26,32 @@ export function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [script, setScript] = useState("");
   const [copied, setCopied] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/settings", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => j.ok && setS(j.settings))
-      .catch(() => toast.error("No se pudo cargar la configuración"));
+      .then((j) => {
+        if (j.ok) {
+          setS(j.settings);
+        } else {
+          setLoadError(j.error || "Error al cargar configuración");
+          // Set defaults para que el usuario pueda usar el form igual
+          setS({
+            companyName: "", companyCuit: "", companyAddress: "",
+            companyPhone: "", companyEmail: "", defaultTaxRate: 21,
+            sheetsWebAppUrl: "", invoicePrefix: "001", nextInvoiceNumber: 1,
+          } as Settings);
+        }
+      })
+      .catch(() => {
+        setLoadError("No se pudo conectar con el servidor");
+        setS({
+          companyName: "", companyCuit: "", companyAddress: "",
+          companyPhone: "", companyEmail: "", defaultTaxRate: 21,
+          sheetsWebAppUrl: "", invoicePrefix: "001", nextInvoiceNumber: 1,
+        } as Settings);
+      });
     fetch("/api/sheets/script")
       .then((r) => r.json())
       .then((j) => j.ok && setScript(j.script))
@@ -78,6 +98,23 @@ export function SettingsPanel() {
 
   return (
     <div className="space-y-4">
+      {loadError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="font-bold mb-1">⚠ No se pudo cargar la configuración desde el servidor</div>
+          <div className="text-xs">
+            Causa probable: <b>las tablas no están creadas</b> en la base de datos PostgreSQL.
+            Para arreglarlo, en tu compu corré:
+            <pre className="mt-2 bg-amber-100 p-2 rounded font-mono text-[10px] overflow-x-auto">
+{`# En la carpeta del proyecto:
+npm install
+echo 'DATABASE_URL="tu-url-de-neon"' > .env
+npx prisma db push`}
+            </pre>
+            Una vez creado, volvé a esta pestaña. El error: <code className="bg-amber-100 px-1 rounded">{loadError}</code>
+          </div>
+        </div>
+      )}
+
       {/* Datos empresa */}
       <Card className="border-[#dde3f5] shadow-sm">
         <CardHeader className="pb-3">

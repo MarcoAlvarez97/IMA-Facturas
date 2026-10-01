@@ -19,7 +19,11 @@ export const metadata: Metadata = {
   keywords: ["facturación", "IMA", "BNA", "USD", "ARS", "factura"],
   authors: [{ name: "IMA Soluciones" }],
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/logo.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/logo.png", sizes: "180x180" }],
   },
   openGraph: {
     title: "IMA Facturas",

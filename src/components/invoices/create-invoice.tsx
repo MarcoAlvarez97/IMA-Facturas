@@ -146,10 +146,17 @@ export function CreateInvoice({ onCreated }: Props) {
         setItems([{ description: "", quantity: 1, unitPrice: 0 }]);
         onCreated?.();
       } else {
-        toast.error(json.error || "Error al crear factura");
+        // Si el error es de tablas faltantes, mensaje específico y útil
+        if (json.detail && String(json.detail).includes("does not exist")) {
+          toast.error("Faltan crear las tablas en la base de datos. Corré 'npx prisma db push' localmente con tu DATABASE_URL.", { duration: 8000 });
+        } else {
+          toast.error(json.error || "Error al crear factura", { duration: 6000 });
+          if (json.detail) console.error("Detalle:", json.detail);
+        }
       }
-    } catch {
-      toast.error("Error de red");
+    } catch (err) {
+      console.error("Network error:", err);
+      toast.error("Error de red. Revisá tu conexión.", { duration: 6000 });
     } finally {
       setLoading(false);
     }
@@ -342,9 +349,9 @@ export function CreateInvoice({ onCreated }: Props) {
       </Card>
 
       {/* Totales */}
-      <Card className="border-[#2563eb] shadow-md">
-        <CardHeader className="pb-3 ima-gradient rounded-t-xl">
-          <CardTitle className="text-white text-base font-bold uppercase tracking-wide">
+      <Card className="border-[#2563eb] shadow-md overflow-hidden">
+        <CardHeader className="p-4 ima-gradient rounded-none border-b-0">
+          <CardTitle className="text-white text-base font-bold uppercase tracking-wide m-0">
             Resumen — Totales
           </CardTitle>
         </CardHeader>
