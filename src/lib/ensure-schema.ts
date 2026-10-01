@@ -113,21 +113,31 @@ export async function ensureSchema() {
       }
 
       // Crear settings singleton si no existe, con la URL de Google Sheets del usuario precargada
+      // Si ya existe pero la URL está vacía o es la URL vieja (la que dejó de funcionar),
+      // la actualizamos a la nueva.
+      const OLD_URL = "https://script.google.com/macros/s/AKfycbzOeaNRhA3SOuCsw_31iwiDRjZ9nF5GKCv1IPzB1qKNRmUhy7XCCzTcoX7XIrXViWMjWA/exec";
+      const NEW_URL = "https://script.google.com/macros/s/AKfycbyqe8-BqJ4VP2QOZbh-yFWUrRJtB1NSdNWljhizZBLLZNdDWfJVSy1Z5dw0hTK_oqk7fw/exec";
+
       try {
-        await db.settings.upsert({
-          where: { id: "singleton" },
-          update: {},
-          create: {
-            id: "singleton",
-            // URL de Google Sheets del usuario — precargada
-            sheetsWebAppUrl:
-              "https://script.google.com/macros/s/AKfycbzOeaNRhA3SOuCsw_31iwiDRjZ9nF5GKCv1IPzB1qKNRmUhy7XCCzTcoX7XIrXViWMjWA/exec",
-            defaultTaxRate: 21,
-            invoicePrefix: "001",
-            nextInvoiceNumber: 1,
-            updatedAt: new Date(),
-          },
-        });
+        const existing = await db.settings.findUnique({ where: { id: "singleton" } });
+        if (!existing) {
+          await db.settings.create({
+            data: {
+              id: "singleton",
+              sheetsWebAppUrl: NEW_URL,
+              defaultTaxRate: 21,
+              invoicePrefix: "001",
+              nextInvoiceNumber: 1,
+              updatedAt: new Date(),
+            },
+          });
+        } else if (!existing.sheetsWebAppUrl || existing.sheetsWebAppUrl === OLD_URL) {
+          // Actualizar a la URL nueva
+          await db.settings.update({
+            where: { id: "singleton" },
+            data: { sheetsWebAppUrl: NEW_URL, updatedAt: new Date() },
+          });
+        }
       } catch (err) {
         console.error("ensureSchema settings upsert error:", err);
       }

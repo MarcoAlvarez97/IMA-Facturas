@@ -99,6 +99,16 @@ export async function POST(req: NextRequest) {
       }, { status: 502 });
     }
 
+    // Detectar si el Web App fue borrado o la URL cambió (Google devuelve HTML en chino)
+    if (text.includes("找不到頁面") || text.includes("抱歉，現時無法開啟該檔案") || (text.includes("<html") && !text.includes("{"))) {
+      return NextResponse.json({
+        ok: false,
+        error: "La URL del Web App de Google Sheets no es válida o el script fue eliminado. Verificá la URL en Apps Script → Implementar → Administrar implementaciones.",
+        hint: "Si re-deployaste el script, copiá la URL nueva y pegala en Configuración.",
+        detail: text.substring(0, 200),
+      }, { status: 502 });
+    }
+
     if (!res.ok) {
       return NextResponse.json({
         ok: false,
@@ -109,26 +119,44 @@ export async function POST(req: NextRequest) {
 
     // Intentar parsear la respuesta como JSON
     let data: unknown = null;
+    let parsedOk = false;
     try {
       data = JSON.parse(text);
+      parsedOk = true;
     } catch {
       // Si no es JSON, probablemente es HTML de Google pidiendo login
       if (text.includes("<html") || text.includes("<!DOCTYPE")) {
         return NextResponse.json({
           ok: false,
-          error: "Google Sheets devolvió una página de login en lugar de ejecutar el script. Revisá la configuración del Web App.",
-          hint: "Implementar → Nueva implementación → Quién puede acceder: Cualquiera.",
+          error: "Google Sheets devolvió una página HTML en lugar de ejecutar el script. La URL del Web App es inválida o el script fue borrado.",
+          hint: "Verificá la URL en Apps Script → Implementar → Administrar implementaciones. Si re-deployaste, copiá la URL nueva.",
         }, { status: 502 });
       }
       data = text.substring(0, 500);
     }
 
+    // Solo marcar como sincronizado si el JSON de respuesta tiene ok: true
+    if (parsedOk && typeof data === "object" && data !== null && (data as { ok?: boolean }).ok === true) {
+      await db.invoice.update({
+        where: { id: invoiceId },
+        data: { sheetsSynced: true },
+      });
+      return NextResponse.json({ ok: true, response: data });
+    } else if (parsedOk && typeof data === "object" && data !== null && (data as { ok?: boolean }).ok === false) {
+      // El script respondió JSON pero con error
+      return NextResponse.json({
+        ok: false,
+        error: "El script de Google Sheets respondió con error: " + ((data as { error?: string }).error || "desconocido"),
+        detail: data,
+      }, { status: 502 });
+    }
+
+    // Respuesta inesperada (no JSON ni HTML conocido)
     await db.invoice.update({
       where: { id: invoiceId },
       data: { sheetsSynced: true },
     });
-
-    return NextResponse.json({ ok: true, response: data });
+    return NextResponse.json({ ok: true, response: data, warning: "Respuesta no-JSON del Web App" });
   } catch (err) {
     console.error("Sheets sync error:", err);
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
