@@ -40,49 +40,49 @@ export function DolarWidget() {
 
   useEffect(() => {
     fetchRate();
-    // Auto-refresh cada 30 minutos (en ms)
+    // Auto-refresh cada 30 minutos
     const id = setInterval(() => fetchRate(), 30 * 60 * 1000);
     return () => clearInterval(id);
   }, [fetchRate]);
 
   return (
     <div className="rounded-2xl bg-white border border-[#dde3f5] shadow-sm overflow-hidden">
-      <div className="ima-gradient px-4 py-3 flex items-center justify-between gap-3">
-        <div className="text-white">
-          <div className="text-[10px] font-bold uppercase tracking-wider opacity-90">
+      <div className="ima-gradient px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+        <div className="text-white min-w-0 flex-1">
+          <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-90">
             Cotización BNA
           </div>
-          <div className="text-xs opacity-90">
+          <div className="text-[10px] sm:text-xs opacity-75 truncate">
             {data ? `Actualizada: ${formatDateTimeAR(data.fetchedAt)}` : "Consultando..."}
           </div>
         </div>
         <button
           onClick={() => fetchRate(true)}
           disabled={loading}
-          className="bg-white/15 hover:bg-white/25 transition-colors border border-white/30 rounded-lg p-2 text-white disabled:opacity-50"
+          className="bg-white/15 hover:bg-white/25 transition-colors border border-white/30 rounded-lg p-2 text-white disabled:opacity-50 flex-shrink-0"
           title="Actualizar cotización"
           aria-label="Actualizar cotización"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "ima-spin-anim" : ""}`} />
         </button>
       </div>
-      <div className="p-4">
-        <div className="rounded-lg bg-[#eff6ff] border border-[#bfdbfe] px-4 py-3 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#1d4ed8]">
+      <div className="p-3 sm:p-4">
+        <div className="rounded-lg bg-[#eff6ff] border border-[#bfdbfe] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-[#1d4ed8]">
               Precio de venta BNA
             </div>
-            <div className="text-[10px] text-[#475569]">
+            <div className="text-[9px] sm:text-[10px] text-[#475569]">
               (usado para facturación)
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-[#1e3a8a]">
+          <div className="text-xl sm:text-2xl font-extrabold text-[#1e3a8a] flex-shrink-0">
             {data ? `$${formatNumber(data.sell)}` : "—"}
           </div>
         </div>
       </div>
       {error && (
-        <div className="px-4 pb-3 text-xs text-red-600">⚠ {error}</div>
+        <div className="px-3 sm:px-4 pb-3 text-xs text-red-600">⚠ {error}</div>
       )}
     </div>
   );

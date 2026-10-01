@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -19,12 +19,22 @@ export const metadata: Metadata = {
   description: "Sistema de facturación IMA Soluciones con cotización BNA automática en USD/ARS.",
   keywords: ["facturación", "IMA", "BNA", "USD", "ARS", "factura"],
   authors: [{ name: "IMA Soluciones" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "IMA Facturas",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/logo.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/logo.png", sizes: "180x180" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180" },
+    ],
   },
   openGraph: {
     title: "IMA Facturas",
@@ -32,6 +42,15 @@ export const metadata: Metadata = {
     siteName: "IMA Facturas",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1e40af",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: true,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -225,23 +225,22 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
                 </div>
               </div>
 
-              <div className="mt-2 flex items-center gap-1 flex-wrap no-print">
+              <div className="mt-3 flex items-center gap-1.5 flex-wrap no-print">
                 <Button
                   onClick={() => onView?.(inv)}
                   size="sm"
-                  variant="outline"
-                  className="h-7 text-[11px] border-[#2563eb] text-[#2563eb] hover:bg-[#eff6ff]"
+                  className="h-9 px-3 text-xs bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold"
                 >
-                  <Eye className="h-3 w-3 mr-1" /> Ver / PDF
+                  <Eye className="h-3.5 w-3.5 mr-1" /> Ver / PDF
                 </Button>
                 {inv.status !== "pagada" && (
                   <Button
                     onClick={() => changeStatus(inv.id, "pagada")}
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[11px] border-green-500 text-green-700 hover:bg-green-50"
+                    className="h-9 px-3 text-xs border-green-500 text-green-700 hover:bg-green-50 font-semibold"
                   >
-                    <Check className="h-3 w-3 mr-1" /> Marcar pagada
+                    <Check className="h-3.5 w-3.5 mr-1" /> Pagada
                   </Button>
                 )}
                 {inv.status === "pagada" && (
@@ -249,9 +248,9 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
                     onClick={() => changeStatus(inv.id, "pendiente")}
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[11px] border-amber-500 text-amber-700 hover:bg-amber-50"
+                    className="h-9 px-3 text-xs border-amber-500 text-amber-700 hover:bg-amber-50 font-semibold"
                   >
-                    <X className="h-3 w-3 mr-1" /> Reabrir
+                    <X className="h-3.5 w-3.5 mr-1" /> Reabrir
                   </Button>
                 )}
                 <Button
@@ -259,23 +258,24 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
                   disabled={syncingId === inv.id}
                   size="sm"
                   variant="outline"
-                  className="h-7 text-[11px] border-[#4f46e5] text-[#4f46e5] hover:bg-[#eef2ff] disabled:opacity-50"
+                  className="h-9 px-3 text-xs border-[#4f46e5] text-[#4f46e5] hover:bg-[#eef2ff] disabled:opacity-50 font-semibold"
                   title="Sincronizar con Google Sheets"
                 >
                   {syncingId === inv.id ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                   ) : (
-                    <Send className="h-3 w-3 mr-1" />
+                    <Send className="h-3.5 w-3.5 mr-1" />
                   )}
-                  {syncingId === inv.id ? "Sincronizando..." : "Sheets"}
+                  {syncingId === inv.id ? "Sync..." : "Sheets"}
                 </Button>
                 <Button
                   onClick={() => deleteInvoice(inv.id)}
                   size="sm"
                   variant="outline"
-                  className="h-7 text-[11px] border-red-300 text-red-600 hover:bg-red-50 ml-auto"
+                  className="h-9 w-9 p-0 text-xs border-red-300 text-red-600 hover:bg-red-50 ml-auto"
+                  title="Eliminar factura"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </Card>
