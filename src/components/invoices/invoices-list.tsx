@@ -102,7 +102,10 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
     }
   };
 
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
   const syncSheets = async (id: string) => {
+    setSyncingId(id);
     try {
       const res = await fetch("/api/sheets/sync", {
         method: "POST",
@@ -114,12 +117,26 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
         setInvoices((arr) =>
           arr.map((i) => (i.id === id ? { ...i, sheetsSynced: true } : i))
         );
-        toast.success("Sincronizado con Google Sheets");
+        toast.success("✓ Sincronizado con Google Sheets", { duration: 4000 });
       } else {
-        toast.error(json.error || "Error al sincronizar");
+        // Mensaje claro y útil según el tipo de error
+        const err = json.error || "Error al sincronizar";
+        if (err.includes("no es accesible públicamente") || err.includes("403")) {
+          toast.error(
+            "El Web App de Google Sheets no es accesible. Re-deployá el script con: 'Quién puede acceder: Cualquiera'.",
+            { duration: 8000 }
+          );
+        } else if (err.includes("Falta configurar")) {
+          toast.error("Falta configurar la URL del Web App en la pestaña Configuración.", { duration: 8000 });
+        } else {
+          toast.error(err, { duration: 6000 });
+        }
       }
-    } catch {
-      toast.error("Error de red");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error de red. Reintentá.", { duration: 6000 });
+    } finally {
+      setSyncingId(null);
     }
   };
 
@@ -239,12 +256,18 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
                 )}
                 <Button
                   onClick={() => syncSheets(inv.id)}
+                  disabled={syncingId === inv.id}
                   size="sm"
                   variant="outline"
-                  className="h-7 text-[11px] border-[#4f46e5] text-[#4f46e5] hover:bg-[#eef2ff]"
+                  className="h-7 text-[11px] border-[#4f46e5] text-[#4f46e5] hover:bg-[#eef2ff] disabled:opacity-50"
                   title="Sincronizar con Google Sheets"
                 >
-                  <Send className="h-3 w-3 mr-1" /> Sheets
+                  {syncingId === inv.id ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Send className="h-3 w-3 mr-1" />
+                  )}
+                  {syncingId === inv.id ? "Sincronizando..." : "Sheets"}
                 </Button>
                 <Button
                   onClick={() => deleteInvoice(inv.id)}

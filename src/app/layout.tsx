@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
@@ -44,6 +45,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         {children}
+        {/* Sonner — usado por toast.success / toast.error */}
+        <SonnerToaster
+          position="top-center"
+          richColors
+          closeButton
+          toastOptions={{ duration: 5000 }}
+        />
+        {/* shadcn/ui Toaster (legacy, por si se usa useToast) */}
         <Toaster />
       </body>
     </html>
