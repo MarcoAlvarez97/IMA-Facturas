@@ -1,12 +1,15 @@
 // Prisma schema — IMA Facturas
-// Base de datos local SQLite para almacenar facturas emitidas
+// PostgreSQL (Neon / Vercel Postgres / Supabase) — Vercel-ready
 
 generator client {
   provider = "prisma-client-js"
+  // binaryTargets: necesario para Vercel serverless (Amazon Linux 2 / Debian)
+  // "native" es para tu compu local, "debian-openssl-3.0.x" es para Vercel.
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
