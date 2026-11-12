@@ -67,9 +67,12 @@ CREATE TABLE IF NOT EXISTS "Settings" (
     "sheetsWebAppUrl" TEXT,
     "invoicePrefix" TEXT,
     "nextInvoiceNumber" INTEGER NOT NULL DEFAULT 1,
+    "defaultNotes" TEXT,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "Settings_pkey" PRIMARY KEY ("id")
 );
+-- Agregar columna defaultNotes si no existe (para bases ya creadas)
+ALTER TABLE "Settings" ADD COLUMN IF NOT EXISTS "defaultNotes" TEXT;
 
 CREATE TABLE IF NOT EXISTS "DollarRate" (
     "id" TEXT NOT NULL,

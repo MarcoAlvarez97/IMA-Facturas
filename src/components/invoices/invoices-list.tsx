@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Eye, Check, X, Loader2, RefreshCw, Send, Trash2,
+  Eye, Check, X, Loader2, RefreshCw, Send, Trash2, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   formatARS, formatUSD, formatDateAR, STATUS_LABELS, STATUS_COLORS,
 } from "@/lib/format";
 import { toast } from "sonner";
+import { EditInvoiceDialog } from "./edit-invoice-dialog";
 
 interface InvoiceItem {
   id: string;
@@ -27,6 +28,7 @@ interface Invoice {
   number: string;
   clientName: string;
   clientCuit: string | null;
+  clientAddress?: string | null;
   clientEmail: string | null;
   description: string | null;
   issuedAt: string;
@@ -34,6 +36,7 @@ interface Invoice {
   usdRate: number;
   usdTotal: number;
   arsTotal: number;
+  usdTaxRate: number;
   status: string;
   paidAt: string | null;
   sheetsSynced: boolean;
@@ -49,6 +52,8 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("todas");
+  const [editing, setEditing] = useState<Invoice | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -233,6 +238,15 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
                 >
                   <Eye className="h-3.5 w-3.5 mr-1" /> Ver / PDF
                 </Button>
+                <Button
+                  onClick={() => { setEditing(inv); setEditOpen(true); }}
+                  size="sm"
+                  variant="outline"
+                  className="h-9 px-3 text-xs border-[#16a34a] text-[#16a34a] hover:bg-green-50 font-semibold"
+                  title="Editar factura"
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                </Button>
                 {inv.status !== "pagada" && (
                   <Button
                     onClick={() => changeStatus(inv.id, "pagada")}
@@ -282,6 +296,16 @@ export function InvoicesList({ refreshSignal, onView }: Props) {
           ))}
         </div>
       )}
+
+      <EditInvoiceDialog
+        invoice={editing}
+        open={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setEditing(null);
+        }}
+        onSaved={() => fetchInvoices()}
+      />
     </div>
   );
 }

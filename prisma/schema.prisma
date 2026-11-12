@@ -1,43 +1,50 @@
 // Prisma schema — IMA Facturas
-// PostgreSQL (Neon / Vercel Postgres / Supabase) — Vercel-ready
+// Base de datos local SQLite para almacenar facturas emitidas
 
 generator client {
   provider = "prisma-client-js"
-  // binaryTargets: necesario para Vercel serverless (Amazon Linux 2 / Debian)
-  // "native" es para tu compu local, "debian-openssl-3.0.x" es para Vercel.
-  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Invoice {
   id            String   @id @default(cuid())
-  number        String   @unique
+  number        String   @unique // N° Factura visible (ej: 001-000123)
+  // Datos del emisor (configurable en Settings)
   issuerName    String
   issuerCuit    String
   issuerAddress String?
+  // Datos del cliente
   clientName    String
   clientCuit    String?
   clientAddress String?
   clientEmail   String?
+  // Descripción general
   description   String?
+  // Fecha de emisión y vencimiento
   issuedAt      DateTime @default(now())
   dueAt         DateTime?
-  usdRate       Float
-  usdRateDate   DateTime
-  usdSubtotal   Float
-  usdTaxRate    Float    @default(0)
+  // Cotización USD utilizada al momento de emitir
+  usdRate       Float    // Cotización BNA venta al momento de emisión
+  usdRateDate   DateTime // Fecha/hora de la cotización
+  // Subtotales
+  usdSubtotal   Float    // Subtotal en USD
+  usdTaxRate    Float    @default(0) // Porcentaje de impuesto (ej: 21 = IVA 21%)
   usdTaxAmount  Float    @default(0)
-  usdTotal      Float
+  usdTotal      Float    // Total en USD
+  // ARS (calculado al emitir)
   arsSubtotal   Float
   arsTaxAmount  Float    @default(0)
   arsTotal      Float
-  status        String   @default("pendiente")
+  // Estado
+  status        String   @default("pendiente") // pendiente | pagada | anulada | vencida
   paidAt        DateTime?
+  // Items de la factura (line items)
   items         InvoiceItem[]
+  // Sync con Google Sheets
   sheetsSynced  Boolean  @default(false)
   sheetsRowId   Int?
   createdAt     DateTime @default(now())
@@ -53,9 +60,9 @@ model InvoiceItem {
   invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   description String
   quantity    Float    @default(1)
-  unitPrice   Float
-  usdAmount   Float
-  arsAmount   Float
+  unitPrice   Float    // Precio unitario en USD
+  usdAmount   Float    // quantity * unitPrice
+  arsAmount   Float    // usdAmount * usdRate
   createdAt   DateTime @default(now())
 
   @@index([invoiceId])
@@ -63,21 +70,28 @@ model InvoiceItem {
 
 model Settings {
   id            String   @id @default("singleton")
+  // Datos del emisor (tu empresa)
   companyName   String?
   companyCuit   String?
   companyAddress String?
   companyPhone  String?
   companyEmail  String?
+  // Configuración de impuestos por defecto
   defaultTaxRate Float   @default(21)
+  // Configuración de Google Sheets
   sheetsWebAppUrl String?
-  invoicePrefix String?
+  // Facturación
+  invoicePrefix String? // Ej: "001"
   nextInvoiceNumber Int @default(1)
+  // Notas / condiciones de pago que aparecen en todas las facturas
+  defaultNotes  String? // Ej: "Transferencia bancaria CBU: 0000003100000000000000 · CUIT: 30-71234567-8 · Vencimiento 30 días"
   updatedAt     DateTime @updatedAt
 }
 
+// Snapshot de cotizaciones — guarda historial
 model DollarRate {
   id          String   @id @default(cuid())
-  source      String   @default("BNA")
+  source      String   @default("BNA") // BNA | BLUE | MEP
   buy         Float
   sell        Float
   fetchedAt   DateTime @default(now())

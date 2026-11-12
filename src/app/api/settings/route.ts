@@ -20,6 +20,7 @@ export async function PUT(req: NextRequest) {
     "companyName", "companyCuit", "companyAddress",
     "companyPhone", "companyEmail", "defaultTaxRate",
     "sheetsWebAppUrl", "invoicePrefix", "nextInvoiceNumber",
+    "defaultNotes",
   ];
   for (const f of fields) {
     if (body[f] !== undefined) allowed[f] = body[f];

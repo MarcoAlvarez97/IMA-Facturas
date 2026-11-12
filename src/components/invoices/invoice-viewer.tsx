@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Printer, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,7 +17,32 @@ interface Props {
 
 // Genera el HTML completo de la factura para imprimir en una ventana nueva.
 // Esto evita todos los problemas de CSS del modal (transform, position: fixed, etc.)
-function buildInvoiceHTML(invoice: Invoice): string {
+function buildInvoiceHTML(invoice: Invoice, issuer?: {
+  companyName: string | null;
+  companyCuit: string | null;
+  companyAddress: string | null;
+  companyPhone: string | null;
+  companyEmail: string | null;
+  defaultNotes?: string | null;
+} | null): string {
+  // Datos del emisor — fallback a los datos guardados en la factura si no hay settings
+  const issuerName = issuer?.companyName || invoice.issuerName || "IMA Soluciones Industriales";
+  const issuerCuit = issuer?.companyCuit || invoice.issuerCuit || "";
+  const issuerAddress = issuer?.companyAddress || invoice.issuerAddress || "";
+  const issuerPhone = issuer?.companyPhone || "";
+  const issuerEmail = issuer?.companyEmail || "";
+  const defaultNotes = issuer?.defaultNotes || null;
+
+  // Construir el HTML de los datos del emisor (solo si hay datos)
+  const issuerLines: string[] = [];
+  if (issuerCuit) issuerLines.push(`<div class="issuer-cuit">CUIT: <strong>${escapeHtml(issuerCuit)}</strong></div>`);
+  if (issuerAddress) issuerLines.push(`<div class="issuer-text">${escapeHtml(issuerAddress)}</div>`);
+  if (issuerPhone) issuerLines.push(`<div class="issuer-text">Tel: ${escapeHtml(issuerPhone)}</div>`);
+  if (issuerEmail) issuerLines.push(`<div class="issuer-text">${escapeHtml(issuerEmail)}</div>`);
+  const issuerInfoHTML = issuerLines.length > 0
+    ? `<div class="issuer-info">${issuerLines.join("")}</div>`
+    : "";
+
   const itemsRows = invoice.items.map((it) => `
     <tr>
       <td class="desc">${escapeHtml(it.description)}</td>
@@ -67,6 +92,14 @@ function buildInvoiceHTML(invoice: Invoice): string {
   .header-right { text-align: right; }
   .header-number { font-size: 24px; font-weight: 800; line-height: 1; }
   .header-date { font-size: 12px; opacity: 0.9; }
+  .issuer-info {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+    font-size: 11px;
+  }
+  .issuer-cuit { font-weight: 600; margin-bottom: 2px; }
+  .issuer-text { font-size: 11px; opacity: 0.95; line-height: 1.4; }
 
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
   .box { border: 1px solid #dde3f5; border-radius: 8px; padding: 12px; background: #fafbff; }
@@ -95,6 +128,28 @@ function buildInvoiceHTML(invoice: Invoice): string {
   .totals-value { font-size: 28px; font-weight: 800; color: #15803d; }
   .totals-equivalent { font-size: 10px; color: #94a3b8; text-align: right; margin-top: 4px; }
 
+  .notes-box {
+    margin-top: 24px;
+    padding: 12px 16px;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #2563eb;
+    border-radius: 8px;
+    background: #f8faff;
+  }
+  .notes-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1e40af;
+    margin-bottom: 6px;
+  }
+  .notes-text {
+    font-size: 11px;
+    color: #1e293b;
+    line-height: 1.55;
+  }
+
   .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #dde3f5; text-align: center; font-size: 10px; color: #475569; }
   .footer strong { color: #1e40af; }
 
@@ -108,8 +163,9 @@ function buildInvoiceHTML(invoice: Invoice): string {
     <div class="header-left">
       <div class="header-logo">IMA</div>
       <div>
-        <div class="header-title">IMA Soluciones Industriales</div>
+        <div class="header-title">${escapeHtml(issuerName)}</div>
         <div class="header-subtitle">Factura electrónica · Argentina</div>
+        ${issuerInfoHTML}
       </div>
     </div>
     <div class="header-right">
@@ -163,9 +219,18 @@ function buildInvoiceHTML(invoice: Invoice): string {
     </div>
   </div>
 
+  ${defaultNotes && defaultNotes.trim() ? `
+  <div class="notes-box">
+    <div class="notes-label">Notas y condiciones de pago</div>
+    <div class="notes-text">${escapeHtml(defaultNotes).replace(/\n/g, "<br>")}</div>
+  </div>
+  ` : ""}
+
   <div class="footer">
-    <p><strong>IMA Soluciones Industriales</strong></p>
-    <p>Documento generado automáticamente · La cotización USD→ARS corresponde al precio de venta del BNA al momento de emisión.</p>
+    <p><strong>${escapeHtml(issuerName)}</strong>${issuerCuit ? ` · CUIT: ${escapeHtml(issuerCuit)}` : ""}</p>
+    ${issuerAddress ? `<p>${escapeHtml(issuerAddress)}</p>` : ""}
+    ${(issuerPhone || issuerEmail) ? `<p>${issuerPhone ? `Tel: ${escapeHtml(issuerPhone)}` : ""}${issuerPhone && issuerEmail ? " · " : ""}${issuerEmail ? escapeHtml(issuerEmail) : ""}</p>` : ""}
+    <p style="margin-top:8px; font-size:9px; opacity:0.8;">Documento generado automáticamente · La cotización USD→ARS corresponde al precio de venta del BNA al momento de emisión.</p>
   </div>
 
   <script>
@@ -189,13 +254,33 @@ function escapeHtml(s: string): string {
 
 export function InvoiceViewer({ invoice, open, onClose }: Props) {
   const [printing, setPrinting] = useState(false);
+  const [issuer, setIssuer] = useState<{
+    companyName: string | null;
+    companyCuit: string | null;
+    companyAddress: string | null;
+    companyPhone: string | null;
+    companyEmail: string | null;
+    defaultNotes?: string | null;
+  } | null>(null);
+
+  // Cargar datos del emisor al abrir
+  useEffect(() => {
+    if (open) {
+      fetch("/api/settings", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => {
+          if (j.ok && j.settings) setIssuer(j.settings);
+        })
+        .catch(() => {});
+    }
+  }, [open]);
 
   if (!invoice) return null;
 
   const handlePrint = () => {
     setPrinting(true);
     try {
-      const html = buildInvoiceHTML(invoice);
+      const html = buildInvoiceHTML(invoice, issuer);
       // Abrir en ventana nueva — evita todos los problemas de CSS del modal
       const printWindow = window.open("", "_blank", "width=900,height=700,scrollbars=yes");
       if (!printWindow) {
@@ -261,8 +346,8 @@ export function InvoiceViewer({ invoice, open, onClose }: Props) {
         <div className="p-6 sm:p-8 bg-white">
           {/* Header */}
           <div className="ima-gradient rounded-xl p-5 flex items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 border border-white/40 rounded-lg p-1.5">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="bg-white/20 border border-white/40 rounded-lg p-1.5 flex-shrink-0">
                 <img
                   src="/logo.png"
                   alt="IMA"
@@ -270,12 +355,29 @@ export function InvoiceViewer({ invoice, open, onClose }: Props) {
                   style={{ width: "48px", height: "48px" }}
                 />
               </div>
-              <div className="text-white">
-                <div className="text-lg font-extrabold leading-tight">IMA Soluciones Industriales</div>
+              <div className="text-white min-w-0">
+                <div className="text-lg font-extrabold leading-tight">
+                  {issuer?.companyName || invoice.issuerName || "IMA Soluciones Industriales"}
+                </div>
                 <div className="text-xs opacity-90">Factura electrónica · Argentina</div>
+                <div className="text-[11px] opacity-95 mt-1 pt-1 border-t border-white/30 space-y-0.5">
+                  {(issuer?.companyCuit || invoice.issuerCuit) && (
+                    <div>CUIT: <strong>{issuer?.companyCuit || invoice.issuerCuit}</strong></div>
+                  )}
+                  {(issuer?.companyAddress || invoice.issuerAddress) && (
+                    <div className="opacity-90">{issuer?.companyAddress || invoice.issuerAddress}</div>
+                  )}
+                  {(issuer?.companyPhone || issuer?.companyEmail) && (
+                    <div className="opacity-90">
+                      {issuer?.companyPhone && `Tel: ${issuer.companyPhone}`}
+                      {issuer?.companyPhone && issuer?.companyEmail && " · "}
+                      {issuer?.companyEmail}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="text-right text-white">
+            <div className="text-right text-white flex-shrink-0">
               <div className="text-2xl font-extrabold tracking-tight">{invoice.number}</div>
               <div className="text-xs opacity-90">
                 {formatDateAR(invoice.issuedAt)}
@@ -364,10 +466,39 @@ export function InvoiceViewer({ invoice, open, onClose }: Props) {
             </div>
           </div>
 
+          {/* Notas y condiciones de pago */}
+          {issuer?.defaultNotes && issuer.defaultNotes.trim() && (
+            <div className="mt-6 p-3 sm:p-4 border border-[#bfdbfe] border-l-4 border-l-[#2563eb] rounded-lg bg-[#f8faff]">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#1e40af] mb-1.5">
+                Notas y condiciones de pago
+              </div>
+              <div className="text-[11px] text-[#1e293b] whitespace-pre-wrap leading-relaxed">
+                {issuer.defaultNotes}
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="mt-8 pt-4 border-t border-[#dde3f5] text-center text-[10px] text-[#475569]">
-            <p className="font-semibold text-[#1e40af]">IMA Soluciones Industriales</p>
-            <p>Documento generado automáticamente · La cotización USD→ARS corresponde al precio de venta del BNA al momento de emisión.</p>
+            <p className="font-semibold text-[#1e40af]">
+              {issuer?.companyName || invoice.issuerName || "IMA Soluciones Industriales"}
+              {(issuer?.companyCuit || invoice.issuerCuit) && (
+                <> · CUIT: {issuer?.companyCuit || invoice.issuerCuit}</>
+              )}
+            </p>
+            {(issuer?.companyAddress || invoice.issuerAddress) && (
+              <p>{issuer?.companyAddress || invoice.issuerAddress}</p>
+            )}
+            {(issuer?.companyPhone || issuer?.companyEmail) && (
+              <p>
+                {issuer?.companyPhone && `Tel: ${issuer.companyPhone}`}
+                {issuer?.companyPhone && issuer?.companyEmail && " · "}
+                {issuer?.companyEmail}
+              </p>
+            )}
+            <p className="mt-2 text-[9px] opacity-80">
+              Documento generado automáticamente · La cotización USD→ARS corresponde al precio de venta del BNA al momento de emisión.
+            </p>
           </div>
         </div>
       </DialogContent>

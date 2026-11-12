@@ -19,6 +19,7 @@ interface Settings {
   sheetsWebAppUrl: string | null;
   invoicePrefix: string | null;
   nextInvoiceNumber: number;
+  defaultNotes: string | null;
 }
 
 export function SettingsPanel() {
@@ -38,7 +39,7 @@ export function SettingsPanel() {
           setS({
             companyName: "", companyCuit: "", companyAddress: "",
             companyPhone: "", companyEmail: "", defaultTaxRate: 21,
-            sheetsWebAppUrl: "", invoicePrefix: "001", nextInvoiceNumber: 1,
+            sheetsWebAppUrl: "", invoicePrefix: "001", nextInvoiceNumber: 1, defaultNotes: "",
           } as Settings);
         }
       })
@@ -46,7 +47,7 @@ export function SettingsPanel() {
         setS({
           companyName: "", companyCuit: "", companyAddress: "",
           companyPhone: "", companyEmail: "", defaultTaxRate: 21,
-          sheetsWebAppUrl: "", invoicePrefix: "001", nextInvoiceNumber: 1,
+          sheetsWebAppUrl: "", invoicePrefix: "001", nextInvoiceNumber: 1, defaultNotes: "",
         } as Settings);
       });
     fetch("/api/sheets/script")
@@ -169,6 +170,31 @@ export function SettingsPanel() {
               className="bg-white"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Notas / Condiciones de pago */}
+      <Card className="border-[#dde3f5] shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#1e40af] text-base font-bold uppercase tracking-wide">
+            Notas y condiciones de pago
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label className="text-[10px] uppercase text-[#475569] font-semibold">
+            Notas que aparecen al pie de todas las facturas
+          </Label>
+          <Textarea
+            value={s.defaultNotes || ""}
+            onChange={(e) => setS({ ...s, defaultNotes: e.target.value })}
+            placeholder={"Ej: Transferencia bancaria CBU: 0000003100000000000000 (Banco Nación)\nAlias: IMA.SOLUCIONES\nCUIT: 30-71234567-8\nVencimiento: 30 días desde la fecha de emisión"}
+            className="bg-white min-h-[120px] text-sm"
+            rows={6}
+          />
+          <p className="text-[10px] text-[#475569]">
+            Estas notas aparecen automáticamente al pie de todas las facturas que emitás.
+            Si necesitás notas específicas para una factura, podés editarlas al momento de crearla.
+          </p>
         </CardContent>
       </Card>
 
